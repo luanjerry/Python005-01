@@ -14,29 +14,6 @@ from datetime import datetime
 请实现转账 100 极客币的 SQL(可以使用 pymysql 或 sqlalchemy-orm 实现)，
 张三余额不足，转账过程中数据库 crash 等情况需保证数据一致性
 用户表
-
-### this is a **better** (but not the only) way to do it ###
-
-class ThingOne(object):
-    def go(self, session):
-        session.query(FooBar).update({"x": 5})
-
-class ThingTwo(object):
-    def go(self, session):
-        session.query(Widget).update({"q": 18})
-
-def run_my_program():
-    session = Session()
-    try:
-        ThingOne().go(session)
-        ThingTwo().go(session)
-
-        session.commit()
-    except:
-        session.rollback()
-        raise
-    finally:
-        session.close()
 """
 
 
@@ -71,87 +48,20 @@ class Audit_table(Base):
     outid = Column(Integer(), ForeignKey(Users_table.uid))
     transfer_amount = Column(Integer())
 
-
-
-
-class Thing:
-
-    def __init__(self):
-        pass
-    @classmethod
-    def go(cls,session,a):
-        
-        #获取转账用户名
-        namea= session.query(Users_table.username).filter(Users_table.uid == a).first()
-        return namea[0]
-
-class Thing2:
-    @classmethod
-    def go(cls,session,b):
-        #获取收款用户名
-        nameb= session.query(Users_table.username).filter(Users_table.uid == b).first()
-        return nameb[0]
-       
-
-class Thing3:
-    @classmethod
-    def go(cls,session,a,qian):
-        #扣款
-        
-        kou = session.query(Assets_table.username, Assets_table.zid, Assets_table.assetsnum).filter(Assets_table.zid == a)
-        print(kou.first()[2],"==",type(kou.first()[2]))
-        print(103)
-        having = kou.first()[2]
-        if having <qian:
-            print(106)
-            raise
-        else:
-            kou.update({Assets_table.assetsnum: having-qian})
-            print("扣钱了")
-
-
-class Thing4:
-    @classmethod
-    def go(cls,session,b,qian):
-        # 收款
-        jia = session.query(Assets_table.username, Assets_table.zid, Assets_table.assetsnum).filter(Assets_table.zid == b)
-        print(122)
-        having = jia.first()[2]
-        jia.update({Assets_table.assetsnum: having + qian})
-        print("发钱了")
-
-class Thing5:
-    @classmethod
-    def go(cls,session,a,b,aa,bb,m):
-        #记录到转账审计表
-        h = Audit_table(username_out= aa, username_in= bb, outid= a, inid= b, transfer_amount= m)
-        session.add(h)
-        #res = session.query(Audit_table.outid, Audit_table.username_out, Audit_table.inid,\
-                   # Audit_table.username_in, Audit_table.transfer_amount, Audit_table.transfer_amount).all()
-        #print(129)
-        #session.query(Audit_table.outid, Audit_table.username_out, Audit_table.inid, Audit_table.username_in, Audit_table.transfer_amount)
-        print(" -----132------转账审计审计表 数据表(audit)")
-#add8 = Tuser_table(username='kiki', age=28, birthday='1992-11-3', sex='女', education='本科')
-#session.add(add8)
-
 # 用户操作类
 class User_actions():
-
     def __init__(self):
-        pass
-        #self.dburl = "mysql+pymysql://testuser:testpass#AB1234@192.168.3.38:3306/testdb?charset=utf8mb4"
-        #self.engine = create_engine(self.dburl, echo=True, encoding="utf-8")
+        self.dburl = "mysql+pymysql://testuser:testpass#AB1234@192.168.3.38:3306/testdb?charset=utf8mb4"
+        self.engine = create_engine(self.dburl, echo=True, encoding="utf-8")
 
-    '''# 转账操作
+    # 转账操作
     def Transfer_deposite(self,oname, iname, nums):
         SessionClass = sessionmaker(bind=self.engine)
         session = SessionClass()
         user_out = oname
         user_in = iname
-
-        
         # 查询转账用户id
-        zz_user =  session.query(Users_table.username).filter(Users_table.uid == a).first()
+        zz_user = session.query(Users_table.username, Users_table.uid).filter(Users_table.username == user_out).first()
         # 获取转账用户id
         zz_num = int(zz_user[1])
 
@@ -162,34 +72,29 @@ class User_actions():
 
         # 转账用户出账操作
         zz_user_ssets = session.query(Assets_table.username, Assets_table.zid, \
-                                    Assets_table.assetsnum).filter(Assets_table.zid == zz_num)
+                                     Assets_table.assetsnum).filter(Assets_table.zid == zz_num)
         zz_user_ssets.update({Assets_table.assetsnum: int(zz_user_ssets.first()[2])-nums})
-        #need check 
         print(zz_user_ssets.first())
 
         # 被账用户进账操作
         bz_user_ssets = session.query(Assets_table.username, Assets_table.zid, \
-                                    Assets_table.assetsnum).filter(Assets_table.zid == bz_num)
+                                      Assets_table.assetsnum).filter(Assets_table.zid == bz_num)
         bz_user_ssets.update({Assets_table.assetsnum: int(bz_user_ssets.first()[2]) + nums})
         print(bz_user_ssets.first())
 
         #记录到转账审计表
+        print(oname,iname,zz_num,bz_num,nums,"---------------------------------------------------")
         auditadd=Audit_table(username_out=oname, username_in=iname, outid=zz_num, inid=bz_num, transfer_amount=nums)
         session.add(auditadd)
-
         res = session.query(Audit_table.outid, Audit_table.username_out, Audit_table.inid,\
-                    Audit_table.username_in, Audit_table.transfer_amount, Audit_table.transfer_amount).all()
+                      Audit_table.username_in, Audit_table.transfer_amount, Audit_table.transfer_amount).all()
         print(" -----------转账审计审计表 数据表(audit)")
-
-        for i in res:
-            print(i)
+        #for i in res:
+           # print(i)
         print(" -----------转转用户资产表 数据表(userassets)：", zz_user_ssets.first())
         print(" -----------被转用户资产表 数据表(userassets): ", bz_user_ssets.first())
         #session.flush()
-        session.commit() '''
-
-     
-
+        session.commit()
     # 添加用户
     def user_add(self, usadd):
         SessionClass = sessionmaker(bind=self.engine)
@@ -204,12 +109,12 @@ class User_actions():
         session.add(asadd)
         session.commit()
 
-#dburl="mysql+pymysql://testuser:testpass#AB1234@192.168.3.38:3306/testdb?charset=utf8mb4"
-#engine = create_engine(dburl, echo=True, encoding="utf-8")
-'''Base.metadata.create_all(engine)
+dburl="mysql+pymysql://testuser:testpass#AB1234@192.168.3.38:3306/testdb?charset=utf8mb4"
+engine = create_engine(dburl, echo=True, encoding="utf-8")
+#Base.metadata.create_all(engine)
 
 #增加用户
-
+"""
 add_h1 = Users_table(uid=100, username='tom1')
 add_h2 = Users_table(uid=101, username='tom2')
 add_h3 = Users_table(uid=102, username='jack1')
@@ -219,9 +124,9 @@ uadd.user_add(add_h1)
 uadd.user_add(add_h2)
 uadd.user_add(add_h3)
 uadd.user_add(add_h4)
-
+"""
 #增加用户资产
-
+""""
 add_z1 = Assets_table(zid=100, username='tom1', assetsnum=2000 )
 add_z2 = Assets_table(zid=101, username='tom2', assetsnum=2000)
 add_z3 = Assets_table(zid=102, username='jack1', assetsnum=2000)
@@ -231,49 +136,30 @@ zadd.assets_add(add_z1)
 zadd.assets_add(add_z2)
 zadd.assets_add(add_z3)
 zadd.assets_add(add_z4)
-'''
+"""
 #用户转账
-# show_me_the_money = User_actions()
-
-#def a_to_b():
-
-#show_me_the_money.Transfer_deposite('tom1', 'jack1', 100)
+zzuser = User_actions()
+zzuser.Transfer_deposite('tom1', 'jack2', 123)
 
 
-def run_my_program(db,a,b,m):
-
-    dburl= db
-    engine = create_engine(dburl, echo=True, encoding="utf-8")
-    SessionClass = sessionmaker(bind=engine)
-    session = SessionClass()
-
-    #session = Session()
-    try:
-        print(242)
-        
-        aa= Thing().go(session,a)
-        print(246)
-        bb= Thing2().go(session,b)
-        #a 扣款
-        Thing3().go(session,a,m)
-        #b 收款
-        Thing4().go(session,b,m)
-        # 记录审计
-        #Thing5().go(session,a,b,aa,bb,m)     --还有问题，需要改
-        print(260)
-        session.commit()
-        print(262)
-    except:
-        session.rollback()
-        #raise
-        print("I am sorry!")
-    finally:
-        session.close()
-
-if __name__ == '__main__':
-    db="mysql+pymysql://testuser:testpass#AB1234@192.168.3.38:3306/testdb?charset=utf8mb4"
-    a = 100
-    b = 102
-    money =200
-    if money > 0:
-        run_my_program(db,a,b,money)
+'''
+2020-12-15 17:55:45,478 INFO sqlalchemy.engine.base.Engine INSERT INTO audit (transfer_time, username_in, inid, username_out, outid, transfer_amount) VALUES (%(transfer_time)s, %(username_in)s, %(inid)s, %(username_out)s, %(outid)s, %(transfer_amount)s)
+2020-12-15 17:55:45,478 INFO sqlalchemy.engine.base.Engine {'transfer_time': datetime.datetime(2020, 12, 15, 17, 55, 45, 478566), 'username_in': 'jack2', 'inid': 103, 'username_out': 'tom2', 'outid': 101, 'transfer_amount': 123}
+2020-12-15 17:55:45,491 INFO sqlalchemy.engine.base.Engine SELECT audit.outid AS audit_outid, audit.username_out AS audit_username_out, audit.inid AS audit_inid, audit.username_in AS audit_username_in, audit.transfer_amount AS audit_transfer_amount 
+FROM audit
+2020-12-15 17:55:45,492 INFO sqlalchemy.engine.base.Engine {}
+ -----------转账审计审计表 数据表(audit)
+2020-12-15 17:55:45,494 INFO sqlalchemy.engine.base.Engine SELECT userassets.username AS userassets_username, userassets.zid AS userassets_zid, userassets.assetsnum AS userassets_assetsnum
+FROM userassets
+WHERE userassets.zid = %(zid_1)s
+ LIMIT %(param_1)s
+2020-12-15 17:55:45,494 INFO sqlalchemy.engine.base.Engine {'zid_1': 101, 'param_1': 1}
+ -----------转转用户资产表 数据表(userassets)： ('tom2', 101, 1811)
+2020-12-15 17:55:45,495 INFO sqlalchemy.engine.base.Engine SELECT userassets.username AS userassets_username, userassets.zid AS userassets_zid, userassets.assetsnum AS userassets_assetsnum
+FROM userassets
+WHERE userassets.zid = %(zid_1)s
+ LIMIT %(param_1)s
+2020-12-15 17:55:45,496 INFO sqlalchemy.engine.base.Engine {'zid_1': 103, 'param_1': 1}
+ -----------被转用户资产表 数据表(userassets):  ('jack2', 103, 2189)
+2020-12-15 17:55:45,496 INFO sqlalchemy.engine.base.Engine COMMIT
+'''
