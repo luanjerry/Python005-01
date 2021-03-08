@@ -6,6 +6,27 @@ from sqlalchemy import func
 from sqlalchemy import desc
 from datetime import datetime
 
+import pymssql
+
+conn = pymssql.connect(r'SERVER=192.168.20.10,3433;DATABASE=Healthone;UID=sa;PWD=Admin123;db=database')
+
+ccc = conn.cursor()
+
+sql = "select top 10  * from tuser"
+try:
+    ccc.execute(sql)  # 执行sql语句
+
+    results = ccc.fetchall()  # 获取查询的所有记录
+    # print("id", "user_id", "name")
+    # 遍历结果
+    for row in results:
+        print(row)
+except Exception as e:
+    raise e
+finally:
+    conn.close()  # 关闭连接
+
+
 #import pymysql
  
 # 打开数据库连接
